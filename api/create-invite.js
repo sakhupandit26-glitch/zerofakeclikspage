@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -11,12 +13,19 @@ export default async function handler(req, res) {
   } = process.env;
 
   if (!BOT_TOKEN || !CHANNEL_ID || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("Missing required environment variables");
     return res.status(500).json({ error: "Missing environment variables" });
   }
 
   try {
-    const visitorId = crypto.randomUUID();
+    const baseUrl = SUPABASE_URL.trim();
+    const parsedUrl = new URL(baseUrl);
 
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("SUPABASE_URL must start with https://");
+    }
+
+    const visitorId = randomUUID();
     const fbp = req.body?.fbp || null;
     const fbc = req.body?.fbc || null;
 
@@ -25,7 +34,7 @@ export default async function handler(req, res) {
 
     const userAgent = req.headers["user-agent"] || null;
 
-    // Create a unique invite link requiring admin approval
+    // Create Telegram invite link
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/createChatInviteLink`,
       {
@@ -41,16 +50,18 @@ export default async function handler(req, res) {
 
     const telegramData = await telegramResponse.json();
 
-    if (!telegramData.ok) {
-      console.error("Telegram error:", telegramData);
-      return res.status(500).json({ error: "Could not create invite link" });
+    if (!telegramResponse.ok || !telegramData.ok) {
+      console.error("Telegram API error:", telegramData);
+      return res.status(502).json({
+        error: "Telegram invite creation failed"
+      });
     }
 
     const inviteLink = telegramData.result.invite_link;
 
-    // Save visitor and invite link in Supabase
+    // Save visitor in Supabase
     const supabaseResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/telegram_visitors`,
+      `${baseUrl.replace(/\/+$/, "")}/rest/v1/telegram_visitors`,
       {
         method: "POST",
         headers: {
@@ -71,9 +82,12 @@ export default async function handler(req, res) {
     );
 
     if (!supabaseResponse.ok) {
-      const error = await supabaseResponse.text();
-      console.error("Supabase error:", error);
-      return res.status(500).json({ error: "Could not save visitor" });
+      const errorText = await supabaseResponse.text();
+      console.error("Supabase insert error:", errorText);
+
+      return res.status(502).json({
+        error: "Supabase visitor save failed"
+      });
     }
 
     return res.status(200).json({
@@ -83,7 +97,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Create invite error:", error.message);
+
+    return res.status(500).json({
+      error: "Server error"
+    });
   }
 }
