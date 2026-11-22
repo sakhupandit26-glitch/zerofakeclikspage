@@ -14,8 +14,12 @@ export default async function handler(req, res) {
 
   if (!BOT_TOKEN || !CHANNEL_ID || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error("Missing required environment variables");
-    return res.status(500).json({ error: "Missing environment variables" });
+    return res.status(500).json({
+      error: "Missing environment variables"
+    });
   }
+
+  let stage = "starting";
 
   try {
     const baseUrl = SUPABASE_URL.trim();
@@ -34,12 +38,16 @@ export default async function handler(req, res) {
 
     const userAgent = req.headers["user-agent"] || null;
 
-    // Create Telegram invite link
+    // STEP 1: Telegram invite link
+    stage = "telegram";
+
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${BOT_TOKEN}/createChatInviteLink`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           chat_id: CHANNEL_ID,
           name: visitorId,
@@ -52,6 +60,7 @@ export default async function handler(req, res) {
 
     if (!telegramResponse.ok || !telegramData.ok) {
       console.error("Telegram API error:", telegramData);
+
       return res.status(502).json({
         error: "Telegram invite creation failed"
       });
@@ -59,7 +68,9 @@ export default async function handler(req, res) {
 
     const inviteLink = telegramData.result.invite_link;
 
-    // Save visitor in Supabase
+    // STEP 2: Save visitor in Supabase
+    stage = "supabase";
+
     const supabaseResponse = await fetch(
       `${baseUrl.replace(/\/+$/, "")}/rest/v1/telegram_visitors`,
       {
@@ -83,6 +94,7 @@ export default async function handler(req, res) {
 
     if (!supabaseResponse.ok) {
       const errorText = await supabaseResponse.text();
+
       console.error("Supabase insert error:", errorText);
 
       return res.status(502).json({
@@ -97,10 +109,16 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("Create invite error:", error.message);
+    console.error("Create invite failed:", {
+      stage,
+      message: error.message,
+      cause: error.cause?.message
+    });
 
     return res.status(500).json({
-      error: "Server error"
+      error: "Server error",
+      stage,
+      details: error.cause?.message || error.message
     });
   }
 }
