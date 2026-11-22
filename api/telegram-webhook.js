@@ -12,16 +12,45 @@ export default async function handler(req, res) {
     }
 
     const update = req.body;
-    const supabaseUrl = process.env.SUPABASE_URL;
+    const joinRequest = update.chat_join_request;
+
+    // Only process new join requests
+    if (!joinRequest) {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+        reason: "Not a join request"
+      });
+    }
+
+    // 2. Verify channel
+    if (String(joinRequest.chat.id) !== String(process.env.CHANNEL_ID)) {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+        reason: "Wrong channel"
+      });
+    }
+
+    // 3. Get invite link
+    const inviteLink = joinRequest.invite_link?.invite_link;
+
+    if (!inviteLink) {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+        reason: "Invite link missing"
+      });
+    }
+
+    // 4. Supabase configuration
+    const supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Supabase environment variables missing");
     }
 
-    const expectedChatId = String(process.env.CHANNEL_ID);
-
-    // Helper: Supabase request
     async function dbRequest(path, options = {}) {
       return fetch(`${supabaseUrl}/rest/v1/${path}`, {
         ...options,
@@ -34,129 +63,23 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Handle incoming join request
-    const joinRequest = update.chat_join_request;
-
-    if (joinRequest) {
-      if (String(joinRequest.chat.id) !== expectedChatId) {
-        return res.status(200).json({ ok: true, ignored: true });
-      }
-
-      const inviteLink = joinRequest.invite_link?.invite_link;
-
-      if (!inviteLink) {
-        return res.status(200).json({
-          ok: true,
-          ignored: true,
-          reason: "Join request has no invite link"
-        });
-      }
-
-      const search = new URLSearchParams({
-        invite_link: `eq.${inviteLink}`,
-        select: "id",
-        limit: "1"
-      });
-
-      const lookup = await dbRequest(
-        `telegram_visitors?${search.toString()}`
-      );
-
-      if (!lookup.ok) {
-        throw new Error("Supabase join-request lookup failed");
-      }
-
-      const rows = await lookup.json();
-
-      if (!rows.length) {
-        return res.status(200).json({
-          ok: true,
-          ignored: true,
-          reason: "Visitor not found"
-        });
-      }
-
-      const user = joinRequest.from;
-
-      const saveUser = await dbRequest(
-        `telegram_visitors?id=eq.${rows[0].id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            telegram_user_id: user.id,
-            telegram_username: user.username || null
-          })
-        }
-      );
-
-      if (!saveUser.ok) {
-        throw new Error("Could not save Telegram join-request user");
-      }
-
-      return res.status(200).json({
-        ok: true,
-        join_request_received: true
-      });
-    }
-
-    // 3. Handle actual membership update after approval
-    const memberUpdate = update.chat_member;
-
-    if (!memberUpdate) {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
-
-    if (String(memberUpdate.chat.id) !== expectedChatId) {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
-
-    const oldMember = memberUpdate.old_chat_member;
-    const newMember = memberUpdate.new_chat_member;
-
-    function isMember(member) {
-      return (
-        member.status === "member" ||
-        member.status === "administrator" ||
-        member.status === "creator" ||
-        (member.status === "restricted" && member.is_member === true)
-      );
-    }
-
-    // Only count a transition from non-member to member
-    if (isMember(oldMember) || !isMember(newMember)) {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
-
-    const telegramUser = newMember.user;
-    const inviteLink = memberUpdate.invite_link?.invite_link;
-
-    // 4. Find visitor by invite link, or by saved Telegram user ID
-    let searchParams;
-
-    if (inviteLink) {
-      searchParams = new URLSearchParams({
-        invite_link: `eq.${inviteLink}`,
-        select: "*",
-        limit: "1"
-      });
-    } else {
-      searchParams = new URLSearchParams({
-        telegram_user_id: `eq.${telegramUser.id}`,
-        select: "*",
-        limit: "1"
-      });
-    }
+    // 5. Find visitor using their unique invite link
+    const search = new URLSearchParams({
+      invite_link: `eq.${inviteLink}`,
+      select: "id,visitor_id,fbp,fbc,ip_address,user_agent,meta_event_sent",
+      limit: "1"
+    });
 
     const lookup = await dbRequest(
-      `telegram_visitors?${searchParams.toString()}`
+      `telegram_visitors?${search.toString()}`
     );
 
     if (!lookup.ok) {
-      throw new Error("Supabase visitor lookup failed");
+      throw new Error("Supabase visitor lookup failed: " + await lookup.text());
     }
 
-    const visitors = await lookup.json();
-    const visitor = visitors[0];
+    const rows = await lookup.json();
+    const visitor = rows[0];
 
     if (!visitor) {
       return res.status(200).json({
@@ -166,15 +89,16 @@ export default async function handler(req, res) {
       });
     }
 
-    if (visitor.meta_event_sent || visitor.joined) {
+    // 6. Prevent duplicate Lead events
+    if (visitor.meta_event_sent) {
       return res.status(200).json({
         ok: true,
         ignored: true,
-        reason: "Already processed"
+        reason: "Lead already sent"
       });
     }
 
-    // 5. Check Meta credentials
+    // 7. Meta credentials
     const pixelId = process.env.META_PIXEL_ID;
     const accessToken = process.env.META_ACCESS_TOKEN;
 
@@ -182,9 +106,9 @@ export default async function handler(req, res) {
       throw new Error("Meta credentials missing");
     }
 
-    // Stable event ID helps with retry deduplication
-    const eventId = `telegram_lead_${visitor.visitor_id}`;
+    const telegramUser = joinRequest.from;
 
+    // 8. Prepare matching data
     const userData = {};
 
     if (visitor.fbp) userData.fbp = visitor.fbp;
@@ -198,15 +122,21 @@ export default async function handler(req, res) {
       userData.client_user_agent = visitor.user_agent;
     }
 
+    // 9. Send Lead event immediately when request arrives
     const eventData = {
       data: [{
         event_name: "Lead",
         event_time: Math.floor(Date.now() / 1000),
-        event_id: eventId,
+        event_id: `telegram_lead_${visitor.visitor_id}`,
         action_source: "website",
         user_data: userData
       }]
     };
+
+    // Optional: show server event in Meta Test Events
+    if (process.env.META_TEST_EVENT_CODE) {
+      eventData.test_event_code = process.env.META_TEST_EVENT_CODE;
+    }
 
     const metaUrl =
       `https://graph.facebook.com/v22.0/${pixelId}/events` +
@@ -227,13 +157,13 @@ export default async function handler(req, res) {
       throw new Error("Meta CAPI failed");
     }
 
-    // 6. Mark joined only after Meta accepts the event
+    // 10. Save request details after Meta accepts the event
     const updateParams = new URLSearchParams({
       id: `eq.${visitor.id}`,
       meta_event_sent: "eq.false"
     });
 
-    const dbUpdate = await dbRequest(
+    const save = await dbRequest(
       `telegram_visitors?${updateParams.toString()}`,
       {
         method: "PATCH",
@@ -241,8 +171,6 @@ export default async function handler(req, res) {
           Prefer: "return=representation"
         },
         body: JSON.stringify({
-          joined: true,
-          joined_at: new Date().toISOString(),
           telegram_user_id: telegramUser.id,
           telegram_username: telegramUser.username || null,
           meta_event_sent: true
@@ -250,22 +178,25 @@ export default async function handler(req, res) {
       }
     );
 
-    if (!dbUpdate.ok) {
-      throw new Error("Could not mark visitor as processed");
+    if (!save.ok) {
+      throw new Error("Could not save Lead status: " + await save.text());
     }
+
+    console.log("Telegram join request Lead sent:", visitor.visitor_id);
 
     return res.status(200).json({
       ok: true,
-      joined: true,
-      meta_event_sent: true
+      join_request_received: true,
+      meta_event_sent: true,
+      meta_events_received: metaResult.events_received
     });
 
   } catch (error) {
-    console.error("Telegram webhook error:", error);
+    console.error("Telegram webhook error:", error.message);
 
     return res.status(500).json({
       ok: false,
-      error: "Webhook processing failed"
+      error: error.message
     });
   }
 }
