@@ -1,184 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#080512" />
-  <meta name="description" content="Join SHADOW VIP's official Telegram channel for daily exclusive content. Free, forever." />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="SHADOW VIP | Official Telegram Channel" />
-  <meta property="og:description" content="Daily exclusive content, straight to your Telegram. Join for free!" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080512">
+  <meta name="description" content="Join SHADOW VIP's official Telegram channel for daily exclusive content.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SHADOW VIP | Official Telegram Channel">
+  <meta property="og:description" content="Daily exclusive content, straight to your Telegram. Join for free!">
   <title>SHADOW VIP — Official Telegram Channel</title>
+
+  <!-- Meta Pixel: PageView only -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}
+    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+    fbq('set', 'autoConfig', false, '1437109641824579');
+    fbq('init', '1437109641824579');
+    fbq('track', 'PageView');
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1437109641824579&ev=PageView&noscript=1">
+  </noscript>
+
   <style>
-    :root {
-      color-scheme: dark;
-      --bg: #080511;
-      --bg-dark: #05040d;
-      --white: #f7f5ff;
-      --muted: #a9a6b9;
-      --muted-low: #777287;
-      --purple: #b762ff;
-      --purple-light: #e19aff;
-      --stroke: rgba(198, 154, 255, .15);
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #080511;
+      color: #f7f5ff;
+      font-family: Inter, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
-    *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; background: var(--bg-dark); color: var(--white); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-    a { color: inherit; }
+
     .page {
-      position: relative;
-      min-height: 100svh;
-      isolation: isolate;
+      min-height: 100vh;
       overflow: hidden;
       background:
-        radial-gradient(ellipse 50% 28% at 50% 31%, rgba(113, 38, 181, .14), transparent 86%),
-        radial-gradient(ellipse 80% 44% at 50% 98%, rgba(82, 22, 142, .08), transparent 75%),
-        linear-gradient(180deg, #0d071c 0%, #080511 54%, #06040d 100%);
+        radial-gradient(ellipse at 50% 30%, rgba(113,38,181,.16), transparent 55%),
+        linear-gradient(180deg,#0d071c,#080511 55%,#06040d);
     }
-    .page::before {
-      content: ""; position: absolute; z-index: -1; inset: 0;
-      opacity: .24;
-      background-image: radial-gradient(rgba(206, 179, 248, .2) .65px, transparent .65px);
-      background-size: 26px 26px;
-      mask-image: linear-gradient(180deg, transparent, black 33%, transparent);
-      pointer-events: none;
+
+    .hero {
+      width: min(100%,900px);
+      margin: auto;
+      padding: 38px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
-    .ambient { position: absolute; z-index: -1; border-radius: 50%; filter: blur(75px); pointer-events: none; }
-    .ambient-one { width: 360px; height: 360px; left: calc(50% - 180px); top: 190px; background: rgba(122, 36, 218, .115); }
-    .ambient-two { width: 620px; height: 190px; left: calc(50% - 310px); top: 690px; background: rgba(128, 46, 205, .055); }
-    .outline-shape { position: absolute; z-index: -1; border: 1px solid rgba(183, 151, 229, .11); border-radius: 30px; pointer-events: none; }
-    .shape-1 { width: 310px; height: 225px; top: 202px; left: calc(50% - 530px); transform: rotate(-13deg); }
-    .shape-2 { width: 310px; height: 190px; top: 179px; right: calc(50% - 475px); transform: rotate(-7deg); }
-    .shape-3 { width: 220px; height: 360px; top: 380px; right: calc(50% - 605px); transform: rotate(24deg); }
-    .shape-4 { width: 270px; height: 300px; top: 715px; left: calc(50% - 530px); transform: rotate(10deg); }
-    .shape-5 { width: 270px; height: 220px; top: 890px; right: calc(50% - 535px); transform: rotate(15deg); }
-    .hero { width: min(100%, 900px); margin: 0 auto; padding: 38px 20px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+
     .eyebrow {
-      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-      min-height: 34px; padding: 7px 15px;
-      border: 1px solid rgba(196, 159, 255, .23); border-radius: 999px;
-      background: rgba(255, 255, 255, .035); box-shadow: inset 0 1px rgba(255, 255, 255, .045);
-      font-size: 10px; letter-spacing: .2em; font-weight: 700; color: #b8b1c9;
-      text-transform: uppercase; white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 15px;
+      border: 1px solid rgba(196,159,255,.23);
+      border-radius: 999px;
+      background: rgba(255,255,255,.035);
+      color: #b8b1c9;
+      font-size: 10px;
+      letter-spacing: .2em;
+      font-weight: 700;
+      text-transform: uppercase;
     }
-    .eyebrow .dot { display: inline-block; flex: none; width: 9px; height: 9px; background: #b965ff; border-radius: 50%; box-shadow: 0 0 0 5px rgba(178, 91, 248, .11), 0 0 15px rgba(191, 109, 255, .65); }
-    .logo-orbit { position: relative; width: 238px; height: 238px; display: grid; place-items: center; margin-top: 12px; }
-    .logo-orbit::before, .logo-orbit::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
-    .logo-orbit::before { inset: 2px; border: 1px solid rgba(185, 93, 255, .14); box-shadow: 0 0 70px rgba(154, 47, 237, .09), inset 0 0 50px rgba(138, 47, 213, .05); }
-    .logo-orbit::after { inset: 24px; border: 1px solid rgba(185, 93, 255, .09); }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #b965ff;
+      box-shadow: 0 0 15px #bf6dff;
+    }
+
+    .logo-orbit {
+      width: 238px;
+      height: 238px;
+      display: grid;
+      place-items: center;
+      margin-top: 12px;
+      border: 1px solid rgba(185,93,255,.2);
+      border-radius: 50%;
+      box-shadow: 0 0 70px rgba(154,47,237,.12);
+    }
+
     .logo-disc {
-      position: relative; z-index: 1; width: 176px; height: 176px; display: grid; place-items: center;
-      border-radius: 50%; overflow: hidden;
-      background: radial-gradient(circle at 50% 47%, #150d33 0%, #0d071e 53%, #04040e 78%);
-      box-shadow: 0 0 0 2px rgba(192, 86, 255, .37), 0 0 0 7px rgba(134, 58, 222, .06), 0 0 38px rgba(145, 42, 241, .28), 0 0 95px rgba(145, 42, 241, .14), inset 0 0 30px rgba(124, 36, 202, .28);
+      width: 176px;
+      height: 176px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle,#150d33,#0d071e 65%,#04040e);
+      box-shadow:
+        0 0 0 2px rgba(192,86,255,.5),
+        0 0 38px rgba(145,42,241,.35),
+        inset 0 0 30px rgba(124,36,202,.28);
     }
-    .logo-disc::before { content: ""; position: absolute; z-index: 2; inset: 11px; border: 3px solid #a755ff; border-radius: 50%; box-shadow: 0 0 7px rgba(185, 82, 255, .9), 0 0 16px rgba(166, 65, 255, .85), inset 0 0 19px rgba(150, 64, 247, .45); pointer-events: none; }
-    .logo-disc::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 49.8%, rgba(189, 127, 249, .08) 50%, transparent 50.2%), linear-gradient(0deg, transparent 49.8%, rgba(189, 127, 249, .07) 50%, transparent 50.2%); pointer-events: none; }
-    .logo-letter { font-size: 103px; line-height: 1; font-style: italic; font-weight: 900; letter-spacing: -.08em; margin-left: -12px; margin-top: -9px; background: linear-gradient(115deg, #e4bcff 5%, #a144ff 37%, #f9dfff 53%, #802bfa 80%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1px #c686ff; filter: drop-shadow(0 0 4px #ae5bff) drop-shadow(0 0 12px rgba(150, 44, 250, .75)); }
-    .logo-image { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .2s ease; }
-    .logo-orbit.has-logo .logo-image { opacity: 1; }
-    .hero h1 { margin: 14px 0 0; font-size: clamp(27px, 4.5vw, 37px); font-weight: 830; line-height: 1.05; letter-spacing: -.065em; font-style: italic; text-shadow: 0 4px 30px rgba(196, 144, 255, .1); }
-    .subtitle { width: min(100%, 610px); margin: 16px 0 0; font-size: clamp(13px, 1.8vw, 15px); line-height: 1.68; letter-spacing: .002em; color: var(--muted); }
-    .features { max-width: 740px; display: flex; justify-content: center; flex-wrap: wrap; gap: 9px 10px; margin-top: 20px; }
-    .feature { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; padding: 7px 12px; border-radius: 99px; border: 1px solid rgba(193, 174, 222, .2); background: rgba(255, 255, 255, .027); color: #bcb7ca; font-size: 11px; line-height: 1.15; letter-spacing: .025em; font-weight: 780; white-space: nowrap; box-shadow: inset 0 1px rgba(255, 255, 255, .035); }
-    .feature svg { width: 15px; height: 15px; flex: none; stroke: #b45aff; }
-    .cta { width: min(100%, 430px); display: flex; align-items: center; justify-content: center; gap: 11px; margin-top: 30px; min-height: 58px; padding: 12px 14px; border-radius: 99px; text-decoration: none; background: linear-gradient(104deg, #a44bff 0%, #bf65ff 53%, #d184f8 100%); color: #13091e; font-size: clamp(13px, 2.1vw, 16px); font-weight: 900; letter-spacing: .085em; box-shadow: 0 12px 40px rgba(149, 53, 239, .28), 0 0 55px rgba(164, 58, 248, .2), inset 0 1px rgba(255, 255, 255, .45); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
-    .cta svg { width: 21px; height: 21px; flex: none; stroke-width: 2; }
-    .cta:hover { transform: translateY(-3px); filter: brightness(1.09); box-shadow: 0 16px 45px rgba(149, 53, 239, .4), 0 0 65px rgba(164, 58, 248, .27); }
-    .cta:active { transform: translateY(0); }
-    a:focus-visible { outline: 3px solid #f2d5ff; outline-offset: 5px; }
-    .ads { width: min(100%, 510px); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; min-height: 48px; padding: 9px 14px; margin-top: 30px; border-radius: 999px; border: 1px solid rgba(193, 174, 222, .18); color: #aaa4b8; background: rgba(255, 255, 255, .025); font-size: 13px; text-decoration: none; transition: border-color .2s, background .2s; }
-    .ads:hover { border-color: rgba(193, 114, 255, .5); background: rgba(160, 80, 231, .07); }
-    .ads-label { font-size: 11px; letter-spacing: .08em; font-weight: 850; padding: 6px 11px; background: rgba(169, 68, 247, .16); color: #ce8aff; border-radius: 8px; }
-    .ads strong { color: #f3eaff; letter-spacing: .01em; font-weight: 800; }
-    .ads svg { stroke: #b5a7cc; width: 17px; height: 17px; }
-    .privacy { margin: 32px 0 0; max-width: 600px; color: var(--muted-low); font-size: 10px; line-height: 1.9; }
-    .footer { margin: 12px 0 0; color: #625a73; font-size: 10px; letter-spacing: .08em; }
-    @media (max-width: 600px) {
+
+    .logo-letter {
+      font-size: 103px;
+      font-style: italic;
+      font-weight: 900;
+      color: #c686ff;
+      text-shadow: 0 0 15px #ae5bff;
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font-size: clamp(27px,4.5vw,37px);
+      font-weight: 830;
+      letter-spacing: -.065em;
+      font-style: italic;
+    }
+
+    .subtitle {
+      max-width: 610px;
+      margin: 16px 0 0;
+      color: #a9a6b9;
+      font-size: 14px;
+      line-height: 1.68;
+    }
+
+    .features {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .feature {
+      padding: 9px 12px;
+      border: 1px solid rgba(193,174,222,.2);
+      border-radius: 99px;
+      background: rgba(255,255,255,.027);
+      color: #bcb7ca;
+      font-size: 11px;
+      font-weight: 780;
+    }
+
+    .cta {
+      width: min(100%,430px);
+      min-height: 58px;
+      margin-top: 30px;
+      padding: 12px;
+      border: 0;
+      border-radius: 99px;
+      background: linear-gradient(104deg,#a44bff,#bf65ff 53%,#d184f8);
+      color: #13091e;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      cursor: pointer;
+      box-shadow: 0 12px 40px rgba(149,53,239,.3);
+    }
+
+    .cta:disabled {
+      opacity: .7;
+      cursor: wait;
+    }
+
+    .ads {
+      width: min(100%,510px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 48px;
+      padding: 9px 14px;
+      margin-top: 30px;
+      border: 1px solid rgba(193,174,222,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.025);
+      color: #aaa4b8;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .ads-label {
+      padding: 6px 11px;
+      border-radius: 8px;
+      background: rgba(169,68,247,.16);
+      color: #ce8aff;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .ads strong { color: #f3eaff; }
+
+    .privacy {
+      max-width: 600px;
+      margin: 32px 0 0;
+      color: #777287;
+      font-size: 10px;
+      line-height: 1.9;
+    }
+
+    .footer {
+      margin-top: 12px;
+      color: #625a73;
+      font-size: 10px;
+      letter-spacing: .08em;
+    }
+
+    @media(max-width:600px) {
       .hero { padding: 34px 16px 28px; }
-      .eyebrow { padding: 7px 11px; gap: 8px; font-size: 9px; letter-spacing: .18em; min-height: 32px; }
-      .logo-orbit { width: 205px; height: 205px; margin-top: 12px; }
+      .logo-orbit { width: 205px; height: 205px; }
       .logo-disc { width: 154px; height: 154px; }
-      .logo-disc::before { inset: 10px; }
       .logo-letter { font-size: 91px; }
-      .hero h1 { margin-top: 12px; font-size: clamp(25px, 7vw, 31px); }
-      .subtitle { margin-top: 15px; font-size: clamp(12px, 3.3vw, 14px); line-height: 1.55; }
-      .features { margin-top: 20px; gap: 8px 7px; }
-      .feature { font-size: 10px; padding: 7px 10px; min-height: 31px; gap: 5px; letter-spacing: .01em; }
-      .feature svg { width: 14px; height: 14px; }
-      .cta { margin-top: 27px; min-height: 54px; font-size: clamp(12px, 3.6vw, 14px); gap: 9px; padding: 11px 12px; letter-spacing: .045em; }
-      .cta svg { width: 19px; height: 19px; }
-      .ads { margin-top: 27px; gap: 6px; min-height: 46px; padding: 9px 8px; font-size: 12px; }
-      .privacy { margin-top: 30px; font-size: 10px; }
-    }
-    @media (max-width: 360px) {
-      .hero { padding-inline: 14px; }
-      .eyebrow { font-size: 9px; letter-spacing: .19em; }
-      .feature { font-size: 10px; padding-inline: 9px; }
-      .ads { font-size: 12px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+      h1 { font-size: 29px; }
+      .subtitle { font-size: 13px; }
+      .feature { font-size: 10px; padding: 8px 10px; }
+      .cta { min-height: 54px; font-size: 13px; }
     }
   </style>
 </head>
+
 <body>
   <div class="page">
-    <div class="ambient ambient-one" aria-hidden="true"></div>
-    <div class="ambient ambient-two" aria-hidden="true"></div>
-    <div class="outline-shape shape-1" aria-hidden="true"></div>
-    <div class="outline-shape shape-2" aria-hidden="true"></div>
-    <div class="outline-shape shape-3" aria-hidden="true"></div>
-    <div class="outline-shape shape-4" aria-hidden="true"></div>
-    <div class="outline-shape shape-5" aria-hidden="true"></div>
     <main class="hero">
-      <div class="eyebrow"><span class="dot" aria-hidden="true"></span>Official Telegram Channel</div>
-      <div class="logo-orbit" id="logoOrbit">
+
+      <div class="eyebrow">
+        <span class="dot"></span>
+        Official Telegram Channel
+      </div>
+
+      <div class="logo-orbit">
         <div class="logo-disc">
-          <span class="logo-letter" aria-hidden="true">R</span>
-          <!-- To use your own logo, put an image named logo.png in the same folder as index.html. -->
-          <img id="brandLogo" class="logo-image" src="profile" alt="SHADOW VIP logo" />
+          <span class="logo-letter">R</span>
         </div>
       </div>
+
       <h1>𝐒𝐇𝐀𝐃𝐎𝐖 BHAI</h1>
-      <p class="subtitle">Join and enjoy with us — daily exclusive content, straight to your Telegram. 100% free, forever.</p>
-      <div class="features" aria-label="Channel benefits">
-        <span class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-12h-7l0-8Z" /></svg>
-          DAILY POSTS
-        </span>
-        <span class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          GROWING COMMUNITY
-        </span>
-        <span class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 3.1 6.3 7 1-5.05 4.92L18.25 21 12 17.7 5.75 21l1.2-6.78L1.9 9.3l7-1L12 2Z"/></svg>
-          EXCLUSIVE CONTENT
-        </span>
+
+      <p class="subtitle">
+        Join and enjoy with us — daily exclusive content,
+        straight to your Telegram. 100% free, forever.
+      </p>
+
+      <div class="features">
+        <span class="feature">⚡ DAILY POSTS</span>
+        <span class="feature">👥 GROWING COMMUNITY</span>
+        <span class="feature">★ EXCLUSIVE CONTENT</span>
       </div>
-      <a class="cta" href="https://rvtugirsxusujawbmrmu.supabase.co" target="_blank" rel="noopener noreferrer" aria-label="Join SHADOW VIP Telegram channel for free">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg>
-        <span>JOIN TELEGRAM FREE</span>
-      </a>
-      <a class="ads" href="https://rvtugirsxusujawbmrmu.supabase.co" target="_blank" rel="noopener noreferrer" aria-label="Contact LAXIT_01 for promotions and ads on Telegram">
+
+      <button class="cta" id="joinButton" type="button">
+        ✈ JOIN TELEGRAM FREE
+      </button>
+
+      <a class="ads"
+         href="https://t.me/akadsboss"
+         target="_blank"
+         rel="noopener noreferrer">
         <span class="ads-label">ADS</span>
         <span>For promotion &amp; ads —</span>
         <strong>@akadsboss</strong>
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
       </a>
-      <p class="privacy">Privacy: this page uses Meta Pixel to measure visits (PageView) and clicks on the Telegram join button (Subscribe) for advertising analytics. A Subscribe event records the button click, not a confirmed Telegram channel subscription. Browser and Meta settings may provide tracking controls.</p>
-      <p class="footer">SHADOW VIP · OFFICIAL TELEGRAM COMMUNITY</p>
+
+      <p class="privacy">
+        Privacy: This page measures visits using Meta Pixel.
+        A Subscribe conversion is sent by the server when a
+        Telegram join request is received.
+      </p>
+
+      <p class="footer">
+        SHADOW VIP · OFFICIAL TELEGRAM COMMUNITY
+      </p>
+
     </main>
   </div>
+
   <script>
-    // The glowing R stays visible until a real logo.png is placed beside index.html.
-    const brandLogo = document.getElementById('brandLogo');
-    const logoOrbit = document.getElementById('logoOrbit');
-    const showLogo = () => {
-      if (brandLogo.naturalWidth > 0) logoOrbit.classList.add('has-logo');
-    };
-    brandLogo.addEventListener('load', showLogo);
-    if (brandLogo.complete) showLogo();
+    function getCookie(name) {
+      const match = document.cookie.match(
+        new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)')
+      );
+
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    const joinButton = document.getElementById('joinButton');
+
+    joinButton.addEventListener('click', async function () {
+      if (joinButton.disabled) return;
+
+      joinButton.disabled = true;
+      joinButton.textContent = 'PLEASE WAIT...';
+
+      try {
+        const response = await fetch('/api/create-invite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fbp: getCookie('_fbp'),
+            fbc: getCookie('_fbc')
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.invite_link) {
+          throw new Error(data.error || 'Invite link creation failed');
+        }
+
+        window.location.href = data.invite_link;
+
+      } catch (error) {
+        console.error('Join error:', error);
+        alert('Unable to create Telegram invite link. Please try again.');
+        joinButton.disabled = false;
+        joinButton.textContent = '✈ JOIN TELEGRAM FREE';
+      }
     });
   </script>
 </body>
