@@ -143,7 +143,6 @@ export default async function handler(req, res) {
       const wasMember = memberStatuses.includes(oldStatus);
       const isNowMember = memberStatuses.includes(newStatus);
 
-      // Only process a transition into actual membership
       if (wasMember || !isNowMember || !telegramUser?.id) {
         return res.status(200).json({
           ok: true,
@@ -276,7 +275,6 @@ export default async function handler(req, res) {
       const metaResult = await metaResponse.json();
 
       if (!metaResponse.ok || metaResult.error) {
-        // Release claim so a retry can send the event
         await dbRequest(
           `telegram_visitors?id=eq.${encodeURIComponent(visitor.id)}`,
           {
@@ -294,6 +292,14 @@ export default async function handler(req, res) {
         );
       }
 
+      // 10. FINAL META DEBUG
+      console.log("META FINAL DEBUG:", {
+        pixel_id: pixelId,
+        test_code_attached: !!eventData.test_event_code,
+        test_code: eventData.test_event_code || "MISSING",
+        meta_response: metaResult
+      });
+
       console.log("Approved Subscribe event sent:", {
         visitor_id: visitor.visitor_id,
         events_received: metaResult.events_received
@@ -308,7 +314,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 10. Ignore unrelated Telegram updates
+    // 11. Ignore unrelated Telegram updates
     return res.status(200).json({
       ok: true,
       ignored: true,
