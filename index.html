@@ -18,7 +18,13 @@
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
 
+  // Disable automatic event detection
+  fbq('set', 'autoConfig', false, '1437109641824579');
+
+  // Initialize Pixel
   fbq('init', '1437109641824579');
+
+  // Keep PageView active
   fbq('track', 'PageView');
   </script>
 
