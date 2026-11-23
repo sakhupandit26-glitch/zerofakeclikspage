@@ -21,22 +21,40 @@ export default async function handler(req, res) {
 
   try {
     // 1. Verify Telegram webhook secret
-    const secret = req.headers["x-telegram-bot-api-secret-token"];
+    const receivedSecret = String(
+      req.headers["x-telegram-bot-api-secret-token"] || ""
+    ).trim();
 
-    if (!secret || secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    const expectedSecret = String(
+      process.env.TELEGRAM_WEBHOOK_SECRET || ""
+    ).trim();
+
+    console.log("Webhook verification:", {
+      headerReceived: !!receivedSecret,
+      envSecretExists: !!expectedSecret,
+      receivedLength: receivedSecret.length,
+      expectedLength: expectedSecret.length,
+      matched: receivedSecret === expectedSecret
+    });
+
+    if (
+      !receivedSecret ||
+      !expectedSecret ||
+      receivedSecret !== expectedSecret
+    ) {
       console.log("Webhook secret verification failed");
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const update = req.body || {};
 
-    // DIAGNOSTIC LOGS
+    // 2. Diagnostic logs
     console.log("Telegram update keys:", Object.keys(update));
     console.log("Join request received:", !!update.chat_join_request);
 
     const joinRequest = update.chat_join_request;
 
-    // 2. Only process join requests
+    // 3. Only process join requests
     if (!joinRequest) {
       console.log("Ignored: Not a join request");
 
@@ -50,7 +68,7 @@ export default async function handler(req, res) {
 
     console.log("Join request details received");
 
-    // 3. Verify channel
+    // 4. Verify channel
     if (
       String(joinRequest.chat.id) !==
       String(process.env.CHANNEL_ID)
@@ -64,7 +82,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Get unique invite link
+    // 5. Get unique invite link
     const inviteLink = joinRequest.invite_link?.invite_link;
 
     if (!inviteLink) {
@@ -79,7 +97,7 @@ export default async function handler(req, res) {
 
     console.log("Invite link received");
 
-    // 5. Supabase configuration
+    // 6. Supabase configuration
     supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
     supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -87,7 +105,7 @@ export default async function handler(req, res) {
       throw new Error("Supabase environment variables missing");
     }
 
-    // 6. Find visitor
+    // 7. Find visitor
     const search = new URLSearchParams({
       invite_link: `eq.${inviteLink}`,
       select: "id,visitor_id,fbp,fbc,ip_address,user_agent,meta_event_sent",
@@ -121,7 +139,7 @@ export default async function handler(req, res) {
 
     console.log("Visitor found:", visitor.visitor_id);
 
-    // 7. Prevent duplicate event
+    // 8. Prevent duplicate event
     const claimParams = new URLSearchParams({
       id: `eq.${visitor.id}`,
       meta_event_sent: "eq.false"
@@ -160,7 +178,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 8. Meta credentials
+    // 9. Meta credentials
     const pixelId = process.env.META_PIXEL_ID;
     const accessToken = process.env.META_ACCESS_TOKEN;
 
@@ -168,7 +186,7 @@ export default async function handler(req, res) {
       throw new Error("Meta credentials missing");
     }
 
-    // 9. Prepare matching data
+    // 10. Prepare matching data
     const userData = {};
 
     if (visitor.fbp) userData.fbp = visitor.fbp;
@@ -182,7 +200,7 @@ export default async function handler(req, res) {
       userData.client_user_agent = visitor.user_agent;
     }
 
-    // 10. Send Subscribe event to Meta CAPI
+    // 11. Send Subscribe event to Meta CAPI
     const eventData = {
       data: [{
         event_name: "Subscribe",
