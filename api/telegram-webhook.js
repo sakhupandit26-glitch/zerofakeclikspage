@@ -3,6 +3,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  let visitor = null;
+  let supabaseUrl = "";
+  let supabaseKey = "";
+
+  async function dbRequest(path, options = {}) {
+    return fetch(`${supabaseUrl}/rest/v1/${path}`, {
+      ...options,
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+  }
+
   try {
     // 1. Verify Telegram webhook secret
     const secret = req.headers["x-telegram-bot-api-secret-token"];
@@ -11,10 +27,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const update = req.body;
+    const update = req.body || {};
     const joinRequest = update.chat_join_request;
 
-    // Only process new join requests
+    // 2. Only process join requests
     if (!joinRequest) {
       return res.status(200).json({
         ok: true,
@@ -23,8 +39,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Verify channel
-    if (String(joinRequest.chat.id) !== String(process.env.CHANNEL_ID)) {
+    // 3. Verify channel
+    if (
+      String(joinRequest.chat.id) !==
+      String(process.env.CHANNEL_ID)
+    ) {
       return res.status(200).json({
         ok: true,
         ignored: true,
@@ -32,7 +51,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Get invite link
+    // 4. Get unique invite link
     const inviteLink = joinRequest.invite_link?.invite_link;
 
     if (!inviteLink) {
@@ -43,27 +62,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Supabase configuration
-    const supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // 5. Supabase configuration
+    supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
+    supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Supabase environment variables missing");
     }
 
-    async function dbRequest(path, options = {}) {
-      return fetch(`${supabaseUrl}/rest/v1/${path}`, {
-        ...options,
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
-          ...(options.headers || {})
-        }
-      });
-    }
-
-    // 5. Find visitor using their unique invite link
+    // 6. Find visitor using unique invite link
     const search = new URLSearchParams({
       invite_link: `eq.${inviteLink}`,
       select: "id,visitor_id,fbp,fbc,ip_address,user_agent,meta_event_sent",
@@ -75,13 +82,17 @@ export default async function handler(req, res) {
     );
 
     if (!lookup.ok) {
-      throw new Error("Supabase visitor lookup failed: " + await lookup.text());
+      throw new Error(
+        "Supabase lookup failed: " + await lookup.text()
+      );
     }
 
     const rows = await lookup.json();
-    const visitor = rows[0];
+    visitor = rows[0];
 
     if (!visitor) {
+      console.log("Visitor not found for invite link");
+
       return res.status(200).json({
         ok: true,
         ignored: true,
@@ -89,16 +100,45 @@ export default async function handler(req, res) {
       });
     }
 
-    // 6. Prevent duplicate Lead events
-    if (visitor.meta_event_sent) {
+    // 7. Prevent duplicate event
+    // Claim the event before sending it.
+    const claimParams = new URLSearchParams({
+      id: `eq.${visitor.id}`,
+      meta_event_sent: "eq.false"
+    });
+
+    const claim = await dbRequest(
+      `telegram_visitors?${claimParams.toString()}`,
+      {
+        method: "PATCH",
+        headers: {
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+          meta_event_sent: true,
+          telegram_user_id: joinRequest.from.id,
+          telegram_username: joinRequest.from.username || null
+        })
+      }
+    );
+
+    if (!claim.ok) {
+      throw new Error(
+        "Could not claim visitor: " + await claim.text()
+      );
+    }
+
+    const claimedRows = await claim.json();
+
+    if (!claimedRows.length) {
       return res.status(200).json({
         ok: true,
         ignored: true,
-        reason: "Lead already sent"
+        reason: "Subscribe event already claimed"
       });
     }
 
-    // 7. Meta credentials
+    // 8. Meta credentials
     const pixelId = process.env.META_PIXEL_ID;
     const accessToken = process.env.META_ACCESS_TOKEN;
 
@@ -106,9 +146,7 @@ export default async function handler(req, res) {
       throw new Error("Meta credentials missing");
     }
 
-    const telegramUser = joinRequest.from;
-
-    // 8. Prepare matching data
+    // 9. Prepare matching data
     const userData = {};
 
     if (visitor.fbp) userData.fbp = visitor.fbp;
@@ -122,20 +160,21 @@ export default async function handler(req, res) {
       userData.client_user_agent = visitor.user_agent;
     }
 
-    // 9. Send Lead event immediately when request arrives
+    // 10. Send Subscribe event to Meta CAPI
     const eventData = {
       data: [{
-        event_name: "Lead",
+        event_name: "Subscribe",
         event_time: Math.floor(Date.now() / 1000),
-        event_id: `telegram_lead_${visitor.visitor_id}`,
+        event_id: `telegram_subscribe_${visitor.visitor_id}`,
         action_source: "website",
         user_data: userData
       }]
     };
 
-    // Optional: show server event in Meta Test Events
+    // Test Events support
     if (process.env.META_TEST_EVENT_CODE) {
-      eventData.test_event_code = process.env.META_TEST_EVENT_CODE;
+      eventData.test_event_code =
+        process.env.META_TEST_EVENT_CODE.trim();
     }
 
     const metaUrl =
@@ -153,40 +192,37 @@ export default async function handler(req, res) {
     const metaResult = await metaResponse.json();
 
     if (!metaResponse.ok || metaResult.error) {
+      // Release claim so a later Telegram retry can try again
+      const releaseParams = new URLSearchParams({
+        id: `eq.${visitor.id}`,
+        meta_event_sent: "eq.true"
+      });
+
+      await dbRequest(
+        `telegram_visitors?${releaseParams.toString()}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            meta_event_sent: false
+          })
+        }
+      );
+
       console.error("Meta API error:", metaResult);
-      throw new Error("Meta CAPI failed");
+      throw new Error(
+        metaResult.error?.message || "Meta CAPI failed"
+      );
     }
 
-    // 10. Save request details after Meta accepts the event
-    const updateParams = new URLSearchParams({
-      id: `eq.${visitor.id}`,
-      meta_event_sent: "eq.false"
+    console.log("Subscribe event sent:", {
+      visitor_id: visitor.visitor_id,
+      events_received: metaResult.events_received
     });
-
-    const save = await dbRequest(
-      `telegram_visitors?${updateParams.toString()}`,
-      {
-        method: "PATCH",
-        headers: {
-          Prefer: "return=representation"
-        },
-        body: JSON.stringify({
-          telegram_user_id: telegramUser.id,
-          telegram_username: telegramUser.username || null,
-          meta_event_sent: true
-        })
-      }
-    );
-
-    if (!save.ok) {
-      throw new Error("Could not save Lead status: " + await save.text());
-    }
-
-    console.log("Telegram join request Lead sent:", visitor.visitor_id);
 
     return res.status(200).json({
       ok: true,
       join_request_received: true,
+      event_name: "Subscribe",
       meta_event_sent: true,
       meta_events_received: metaResult.events_received
     });
