@@ -24,26 +24,39 @@ export default async function handler(req, res) {
     const secret = req.headers["x-telegram-bot-api-secret-token"];
 
     if (!secret || secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+      console.log("Webhook secret verification failed");
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const update = req.body || {};
+
+    // DIAGNOSTIC LOGS
+    console.log("Telegram update keys:", Object.keys(update));
+    console.log("Join request received:", !!update.chat_join_request);
+
     const joinRequest = update.chat_join_request;
 
     // 2. Only process join requests
     if (!joinRequest) {
+      console.log("Ignored: Not a join request");
+
       return res.status(200).json({
         ok: true,
         ignored: true,
-        reason: "Not a join request"
+        reason: "Not a join request",
+        received_keys: Object.keys(update)
       });
     }
+
+    console.log("Join request details received");
 
     // 3. Verify channel
     if (
       String(joinRequest.chat.id) !==
       String(process.env.CHANNEL_ID)
     ) {
+      console.log("Ignored: Wrong channel");
+
       return res.status(200).json({
         ok: true,
         ignored: true,
@@ -55,12 +68,16 @@ export default async function handler(req, res) {
     const inviteLink = joinRequest.invite_link?.invite_link;
 
     if (!inviteLink) {
+      console.log("Ignored: Invite link missing");
+
       return res.status(200).json({
         ok: true,
         ignored: true,
         reason: "Invite link missing"
       });
     }
+
+    console.log("Invite link received");
 
     // 5. Supabase configuration
     supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
@@ -70,12 +87,14 @@ export default async function handler(req, res) {
       throw new Error("Supabase environment variables missing");
     }
 
-    // 6. Find visitor using unique invite link
+    // 6. Find visitor
     const search = new URLSearchParams({
       invite_link: `eq.${inviteLink}`,
       select: "id,visitor_id,fbp,fbc,ip_address,user_agent,meta_event_sent",
       limit: "1"
     });
+
+    console.log("Searching visitor in Supabase");
 
     const lookup = await dbRequest(
       `telegram_visitors?${search.toString()}`
@@ -100,8 +119,9 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log("Visitor found:", visitor.visitor_id);
+
     // 7. Prevent duplicate event
-    // Claim the event before sending it.
     const claimParams = new URLSearchParams({
       id: `eq.${visitor.id}`,
       meta_event_sent: "eq.false"
@@ -131,6 +151,8 @@ export default async function handler(req, res) {
     const claimedRows = await claim.json();
 
     if (!claimedRows.length) {
+      console.log("Subscribe event already claimed");
+
       return res.status(200).json({
         ok: true,
         ignored: true,
@@ -171,7 +193,6 @@ export default async function handler(req, res) {
       }]
     };
 
-    // Test Events support
     if (process.env.META_TEST_EVENT_CODE) {
       eventData.test_event_code =
         process.env.META_TEST_EVENT_CODE.trim();
@@ -180,6 +201,8 @@ export default async function handler(req, res) {
     const metaUrl =
       `https://graph.facebook.com/v22.0/${pixelId}/events` +
       `?access_token=${encodeURIComponent(accessToken)}`;
+
+    console.log("Sending Subscribe event to Meta");
 
     const metaResponse = await fetch(metaUrl, {
       method: "POST",
@@ -192,7 +215,6 @@ export default async function handler(req, res) {
     const metaResult = await metaResponse.json();
 
     if (!metaResponse.ok || metaResult.error) {
-      // Release claim so a later Telegram retry can try again
       const releaseParams = new URLSearchParams({
         id: `eq.${visitor.id}`,
         meta_event_sent: "eq.true"
